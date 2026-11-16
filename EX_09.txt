@@ -1,0 +1,52 @@
+package com.example.demo;
+
+import java.util.List;
+import jakarta.persistence.*;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.web.bind.annotation.*;
+
+@Entity
+class Ticket {
+    @Id @GeneratedValue
+    public Integer id;
+    public String source, destination;
+}
+
+interface TicketRepository extends JpaRepository<Ticket, Integer> {
+    List<Ticket> findBySource(String source);
+}
+
+@SpringBootApplication
+@RestController
+public class DemoApplication {
+
+    private final TicketRepository repo;
+
+    public DemoApplication(TicketRepository repo) { this.repo = repo; }
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+
+    @GetMapping("/book/{source}/{destination}")
+    public Ticket book(@PathVariable String source, @PathVariable String destination) {
+        Ticket t = new Ticket();
+        t.source = source;
+        t.destination = destination;
+        return repo.save(t);
+    }
+
+    @GetMapping("/all")
+    public List<Ticket> all() { return repo.findAll(); }
+
+    @GetMapping("/source/{source}")
+    public List<Ticket> bySource(@PathVariable String source) { return repo.findBySource(source); }
+
+    @GetMapping("/cancel/{id}")
+    public String cancel(@PathVariable int id) {
+        repo.deleteById(id);
+        return "Ticket Cancelled";
+    }
+}

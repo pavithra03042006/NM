@@ -1,0 +1,55 @@
+package com.example.demo;
+
+import java.util.List;
+import jakarta.persistence.*;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.web.bind.annotation.*;
+
+@Entity
+class Student {
+    @Id @GeneratedValue
+    public Integer id;
+    public String name, dept;
+}
+
+interface StudentCustom {
+    List<Student> getByDept(String dept);
+}
+
+class StudentCustomImpl implements StudentCustom {     // name = interface name + Impl
+    @PersistenceContext
+    EntityManager em;
+
+    public List<Student> getByDept(String dept) {
+        return em.createQuery("from Student where dept = :d", Student.class)
+                 .setParameter("d", dept).getResultList();
+    }
+}
+
+interface StudentRepository extends JpaRepository<Student, Integer>, StudentCustom { }
+
+@SpringBootApplication
+@RestController
+public class DemoApplication {
+
+    private final StudentRepository repo;
+
+    public DemoApplication(StudentRepository repo) { this.repo = repo; }
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+
+    @GetMapping("/add/{name}/{dept}")
+    public Student add(@PathVariable String name, @PathVariable String dept) {
+        Student s = new Student();
+        s.name = name;
+        s.dept = dept;
+        return repo.save(s);
+    }
+
+    @GetMapping("/custom/{dept}")
+    public List<Student> custom(@PathVariable String dept) { return repo.getByDept(dept); }
+}

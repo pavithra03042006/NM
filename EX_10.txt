@@ -1,0 +1,54 @@
+package com.example.demo;
+
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@Service
+class HelloService {
+    public String hello() { return "Program Executed Successfully"; }
+}
+
+@Aspect
+@Component
+class LogAspect {
+    @Before("execution(* com.example.demo.HelloService.*(..))")
+    public void before() { System.out.println("AOP: before method"); }
+
+    @After("execution(* com.example.demo.HelloService.*(..))")
+    public void after() { System.out.println("AOP: after method"); }
+}
+
+@SpringBootApplication
+@RestController
+public class DemoApplication {
+
+    private final HelloService service;
+
+    public DemoApplication(HelloService service) { this.service = service; }
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+
+    @GetMapping("/hello")
+    public String hello() { return service.hello(); }
+}
+
+/* If the exam asks for @Around, replace the two advice methods with:
+
+    @Around("execution(* com.example.demo.HelloService.*(..))")
+    public Object around(org.aspectj.lang.ProceedingJoinPoint pjp) throws Throwable {
+        System.out.println("Before");
+        Object result = pjp.proceed();
+        System.out.println("After");
+        return result;
+    }
+   and add: import org.aspectj.lang.annotation.Around;
+*/

@@ -1,0 +1,53 @@
+package com.example.demo;
+
+import java.util.List;
+import jakarta.persistence.*;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.web.bind.annotation.*;
+
+@Entity
+class Guesstimate {
+    @Id @GeneratedValue
+    public Integer id;
+    public String topic, answer;
+}
+
+interface GuesstimateRepository extends JpaRepository<Guesstimate, Integer> {
+    List<Guesstimate> findByTopic(String topic);
+}
+
+@SpringBootApplication
+@RestController
+public class DemoApplication {
+
+    private final GuesstimateRepository repo;
+
+    public DemoApplication(GuesstimateRepository repo) { this.repo = repo; }
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+
+    @PostMapping("/guess")
+    public Guesstimate add(@RequestBody Guesstimate g) { return repo.save(g); }
+
+    @GetMapping("/guess")
+    public List<Guesstimate> all() { return repo.findAll(); }
+
+    @GetMapping("/guess/{id}")
+    public Guesstimate get(@PathVariable int id) { return repo.findById(id).orElse(null); }
+
+    @GetMapping("/guess/topic/{topic}")
+    public List<Guesstimate> byTopic(@PathVariable String topic) { return repo.findByTopic(topic); }
+
+    @PutMapping("/guess")
+    public Guesstimate update(@RequestBody Guesstimate g) { return repo.save(g); }
+
+    @DeleteMapping("/guess/{id}")
+    public String delete(@PathVariable int id) {
+        repo.deleteById(id);
+        return "Deleted";
+    }
+}

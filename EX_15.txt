@@ -1,0 +1,54 @@
+package com.example.demo;
+
+import java.util.List;
+import jakarta.persistence.*;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.web.bind.annotation.*;
+
+@Entity
+class Movie {
+    @Id @GeneratedValue
+    public Integer id;
+    public String name, genre;
+}
+
+interface MovieRepository extends JpaRepository<Movie, Integer> {
+    List<Movie> findByGenre(String genre);
+}
+
+@SpringBootApplication
+@RestController
+public class DemoApplication {
+
+    private final MovieRepository repo;
+
+    public DemoApplication(MovieRepository repo) { this.repo = repo; }
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+
+    @PostMapping("/movie")
+    public Movie add(@RequestBody Movie m) { return repo.save(m); }
+
+    @GetMapping("/movie")
+    public List<Movie> all() { return repo.findAll(Sort.by("name")); }
+
+    @GetMapping("/movie/{id}")
+    public Movie get(@PathVariable int id) { return repo.findById(id).orElse(null); }
+
+    @GetMapping("/movie/genre/{genre}")
+    public List<Movie> byGenre(@PathVariable String genre) { return repo.findByGenre(genre); }
+
+    @PutMapping("/movie")
+    public Movie update(@RequestBody Movie m) { return repo.save(m); }
+
+    @DeleteMapping("/movie/{id}")
+    public String delete(@PathVariable int id) {
+        repo.deleteById(id);
+        return "Deleted";
+    }
+}

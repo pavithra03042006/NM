@@ -1,0 +1,57 @@
+package com.example.demo;
+
+import java.util.List;
+import jakarta.persistence.*;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.web.bind.annotation.*;
+
+@Entity
+class Student {
+    @Id @GeneratedValue
+    public Integer id;
+    public String name, dept;
+}
+
+interface StudentRepository extends JpaRepository<Student, Integer> { }
+
+@SpringBootApplication
+@RestController
+public class DemoApplication {
+
+    private final StudentRepository repo;
+
+    public DemoApplication(StudentRepository repo) { this.repo = repo; }
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+
+    @GetMapping("/add/{name}/{dept}")
+    public Student add(@PathVariable String name, @PathVariable String dept) {
+        Student s = new Student();
+        s.name = name;
+        s.dept = dept;
+        return repo.save(s);                                   // Create
+    }
+
+    @GetMapping("/all")
+    public List<Student> all() { return repo.findAll(); }      // Read all
+
+    @GetMapping("/get/{id}")
+    public Student get(@PathVariable int id) { return repo.findById(id).orElse(null); }   // Read one
+
+    @GetMapping("/update/{id}/{name}")
+    public Student update(@PathVariable int id, @PathVariable String name) {
+        Student s = repo.findById(id).get();
+        s.name = name;
+        return repo.save(s);                                   // Update
+    }
+
+    @GetMapping("/delete/{id}")
+    public String delete(@PathVariable int id) {
+        repo.deleteById(id);                                   // Delete
+        return "Deleted";
+    }
+}

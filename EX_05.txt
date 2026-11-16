@@ -1,0 +1,51 @@
+package com.example.demo;
+
+import java.util.List;
+import jakarta.persistence.*;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.web.bind.annotation.*;
+
+@Entity
+class Student {
+    @Id @GeneratedValue
+    public Integer id;
+    public String name, dept;
+}
+
+interface StudentRepository extends JpaRepository<Student, Integer> {
+    List<Student> findByName(String name);
+    List<Student> findByDept(String dept);
+    List<Student> findByNameStartingWith(String text);
+}
+
+@SpringBootApplication
+@RestController
+public class DemoApplication {
+
+    private final StudentRepository repo;
+
+    public DemoApplication(StudentRepository repo) { this.repo = repo; }
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+
+    @GetMapping("/add/{name}/{dept}")
+    public Student add(@PathVariable String name, @PathVariable String dept) {
+        Student s = new Student();
+        s.name = name;
+        s.dept = dept;
+        return repo.save(s);
+    }
+
+    @GetMapping("/name/{name}")
+    public List<Student> byName(@PathVariable String name) { return repo.findByName(name); }
+
+    @GetMapping("/dept/{dept}")
+    public List<Student> byDept(@PathVariable String dept) { return repo.findByDept(dept); }
+
+    @GetMapping("/start/{text}")
+    public List<Student> start(@PathVariable String text) { return repo.findByNameStartingWith(text); }
+}

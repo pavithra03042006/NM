@@ -1,0 +1,53 @@
+package com.example.demo;
+
+import java.util.List;
+import jakarta.persistence.*;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.web.bind.annotation.*;
+
+@Entity
+class Coach {
+    @Id @GeneratedValue
+    public Integer id;
+    public String name, mobile;
+}
+
+interface CoachRepository extends JpaRepository<Coach, Integer> {
+    List<Coach> findByName(String name);
+}
+
+@SpringBootApplication
+@RestController
+public class DemoApplication {
+
+    private final CoachRepository repo;
+
+    public DemoApplication(CoachRepository repo) { this.repo = repo; }
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+
+    @PostMapping("/coach")
+    public Coach add(@RequestBody Coach c) { return repo.save(c); }
+
+    @GetMapping("/coach")
+    public List<Coach> all() { return repo.findAll(); }
+
+    @GetMapping("/coach/{id}")
+    public Coach get(@PathVariable int id) { return repo.findById(id).orElse(null); }
+
+    @GetMapping("/coach/name/{name}")
+    public List<Coach> byName(@PathVariable String name) { return repo.findByName(name); }
+
+    @PutMapping("/coach")
+    public Coach update(@RequestBody Coach c) { return repo.save(c); }
+
+    @DeleteMapping("/coach/{id}")
+    public String delete(@PathVariable int id) {
+        repo.deleteById(id);
+        return "Deleted";
+    }
+}
