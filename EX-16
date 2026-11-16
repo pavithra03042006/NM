@@ -1,0 +1,71 @@
+package com.example.demo;
+
+import java.util.List;
+import jakarta.persistence.*;                        // Spring Boot 2.x: javax.persistence.*
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+@Entity
+class Sim {
+    @Id @GeneratedValue
+    public Integer id;
+    public String simNumber, provider, name, address;
+    public int age;
+    public String status = "INACTIVE";
+}
+
+interface SimRepository extends JpaRepository<Sim, Integer> {
+    Sim findBySimNumber(String simNumber);
+}
+
+@SpringBootApplication
+@RestController
+public class DemoApplication {
+
+    private final SimRepository repo;
+
+    public DemoApplication(SimRepository repo) { this.repo = repo; }
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+
+    // 1. Admin adds a SIM
+    @PostMapping("/sim/add")
+    public Sim add(@RequestBody Sim sim) {
+        sim.status = "INACTIVE";
+        return repo.save(sim);
+    }
+
+    // 2. Customer activates the SIM
+    @PostMapping("/sim/activate/{simNumber}")
+    public Sim activate(@PathVariable String simNumber, @RequestBody Sim c) {
+        Sim sim = get(simNumber);
+        if (sim.status.equals("ACTIVE"))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "SIM already active");
+        if (c.age < 18)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Age must be 18 or above");
+        sim.name = c.name;
+        sim.age = c.age;
+        sim.address = c.address;
+        sim.status = "ACTIVE";
+        return repo.save(sim);
+    }
+
+    // 3. Check status
+    @GetMapping("/sim/{simNumber}")
+    public Sim get(@PathVariable String simNumber) {
+        Sim sim = repo.findBySimNumber(simNumber);
+        if (sim == null)
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "SIM not found");
+        return sim;
+    }
+
+    // 4. List all SIMs
+    @GetMapping("/sim/all")
+    public List<Sim> all() { return repo.findAll(); }
+}
